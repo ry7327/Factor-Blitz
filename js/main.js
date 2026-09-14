@@ -38,7 +38,7 @@ const state = {
   },
   engine: null,
   lastRunConfig: null, // used for "Play again"
-  lb: { configId: RANKED_CONFIGS[0].id, gameType: GAME_TYPES.ACCURACY },
+  lb: { configId: RANKED_CONFIGS[0].id, gameType: GAME_TYPES.ACCURACY, period: "monthly" },
 };
 
 /* ==========================================================================
@@ -84,9 +84,33 @@ function wireHome() {
       }
     });
   });
+
+  let beeMessageTimeout = null;
+  $("#secret-bee").addEventListener("click", () => {
+    const msg = $("#bee-message");
+    msg.classList.add("showing");
+    clearTimeout(beeMessageTimeout);
+    beeMessageTimeout = setTimeout(() => {
+      msg.classList.remove("showing");
+    }, 2200);
+  });
 }
 
 function renderLeaderboardTabs() {
+  const periodTabs = $("#lb-period-tabs");
+  periodTabs.innerHTML = "";
+  [["monthly", "This month"], ["all_time", "All-time record"]].forEach(([period, label]) => {
+    const btn = document.createElement("button");
+    btn.className = "lb-tab" + (period === state.lb.period ? " active" : "");
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      state.lb.period = period;
+      renderLeaderboardTabs();
+      refreshLeaderboardPreview();
+    });
+    periodTabs.appendChild(btn);
+  });
+
   const configTabs = $("#lb-config-tabs");
   configTabs.innerHTML = "";
   RANKED_CONFIGS.forEach((cfg) => {
@@ -125,12 +149,33 @@ async function refreshLeaderboardPreview() {
   const wrap = $("#lb-table-wrap");
   wrap.innerHTML = `<p class="lb-empty">Loading leaderboard&hellip;</p>`;
   try {
-    const rows = await fetchTopScores(state.lb.configId, state.lb.gameType);
+    const rows = await fetchTopScores(state.lb.configId, state.lb.gameType, state.lb.period);
     wrap.innerHTML = "";
-    wrap.appendChild(renderLeaderboardTable(rows, state.lb.gameType));
+    if (state.lb.period === "all_time") {
+      wrap.appendChild(renderAllTimeRecord(rows, state.lb.gameType));
+    } else {
+      wrap.appendChild(renderLeaderboardTable(rows, state.lb.gameType));
+    }
   } catch (err) {
     wrap.innerHTML = `<p class="lb-empty">Leaderboards aren't connected yet.</p>`;
   }
+}
+
+function renderAllTimeRecord(rows, gameType) {
+  const wrap = document.createElement("div");
+  if (!rows.length) {
+    wrap.innerHTML = `<p class="lb-empty">No all-time record yet &mdash; be the first!</p>`;
+    return wrap;
+  }
+  const r = rows[0];
+  wrap.innerHTML = `
+    <div class="lb-record">
+      <div class="lb-record-initials">${r.initials}</div>
+      <div class="lb-record-value">${formatLbValue(r, gameType)}</div>
+      <div class="lb-record-label">All-time record</div>
+    </div>
+  `;
+  return wrap;
 }
 
 function renderLeaderboardTable(rows, gameType) {
@@ -472,22 +517,28 @@ async function showResults(runConfig, results) {
 
   const qualifyBox = $("#qualify-box");
   qualifyBox.classList.add("hidden");
-  qualifyBox.innerHTML = `
-    <p>New Top 10 score! Enter your initials:</p>
-    <div class="initials-inputs">
-      <input maxlength="1" class="initial-letter" data-idx="0" />
-      <input maxlength="1" class="initial-letter" data-idx="1" />
-      <input maxlength="1" class="initial-letter" data-idx="2" />
-      <input maxlength="1" class="initial-letter" data-idx="3" />
-    </div>
-    <button class="primary-btn" id="submit-initials-btn">Submit</button>
-  `;
 
   if (runConfig.mode === MODES.RANKED) {
     try {
       const value = rankingValueFor(runConfig.gameType, results);
-      const qualifies = await doesQualify(runConfig.rankedConfigId, runConfig.gameType, value);
-      if (qualifies) {
+      const [qualifiesMonthly, isAllTimeRecord] = await Promise.all([
+        doesQualify(runConfig.rankedConfigId, runConfig.gameType, value, "monthly"),
+        doesQualify(runConfig.rankedConfigId, runConfig.gameType, value, "all_time"),
+      ]);
+      if (qualifiesMonthly || isAllTimeRecord) {
+        const headline = isAllTimeRecord
+          ? "New all-time record! Enter your initials:"
+          : "Top 10 this month! Enter your initials:";
+        qualifyBox.innerHTML = `
+          <p>${headline}</p>
+          <div class="initials-inputs">
+            <input maxlength="1" class="initial-letter" data-idx="0" />
+            <input maxlength="1" class="initial-letter" data-idx="1" />
+            <input maxlength="1" class="initial-letter" data-idx="2" />
+            <input maxlength="1" class="initial-letter" data-idx="3" />
+          </div>
+          <button class="primary-btn" id="submit-initials-btn">Submit</button>
+        `;
         qualifyBox.classList.remove("hidden");
         wireInitialsInputs();
       }

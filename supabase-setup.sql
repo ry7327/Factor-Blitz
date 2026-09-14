@@ -31,3 +31,62 @@ create policy "Public insert access"
   on leaderboard_scores for insert
   to anon
   with check (true);
+
+
+-- =============================================================================
+-- Automatic cleanup, with the all-time record always protected
+-- =============================================================================
+-- Rather than a hard "reset", the app treats "Monthly" and "All-time" as two
+-- different queries over the same table (see js/leaderboard.js) - nothing is
+-- ever physically deleted just because a month ended. This function instead
+-- runs periodically as routine housekeeping, so the table doesn't grow
+-- forever. It is careful to NEVER delete the current all-time-best row for
+-- any config+game_type combination, no matter how old that row is - it finds
+-- the best row per group FIRST, explicitly excludes it, and only then deletes
+-- old rows older than 6 months from what's left.
+
+create or replace function prune_old_leaderboard_scores()
+returns void
+language plpgsql
+as $$
+begin
+  delete from leaderboard_scores t
+  where t.created_at < now() - interval '6 months'
+    and t.id not in (
+      -- The single best row per (config_id, game_type) group, using each
+      -- game type's own ranking rule (race = lowest time wins; everything
+      -- else = highest score/correct_count wins). This is exactly the same
+      -- "best row" that js/leaderboard.js's all-time query would return.
+      select id from (
+        select
+          id,
+          row_number() over (
+            partition by config_id, game_type
+            order by
+              case when game_type = 'race' then time_ms end asc nulls last,
+              case when game_type <> 'race' then coalesce(score, correct_count) end desc nulls last
+          ) as rn
+        from leaderboard_scores
+      ) best_per_group
+      where rn = 1
+    );
+end;
+$$;
+
+-- Enable the scheduler extension (safe to run even if already enabled).
+create extension if not exists pg_cron with schema pg_catalog;
+grant usage on schema cron to postgres;
+grant all privileges on all tables in schema cron to postgres;
+
+-- Run the cleanup at 3am UTC on the 1st of every month.
+select cron.schedule(
+  'prune-old-leaderboard-scores',
+  '0 3 1 * *',
+  $$ select prune_old_leaderboard_scores(); $$
+);
+
+-- To check the cleanup job's history later, run:
+--   select jobname, status, start_time, return_message
+--   from cron.job_run_details
+--   order by start_time desc
+--   limit 10;
