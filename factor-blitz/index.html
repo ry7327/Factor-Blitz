@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Factor Blitz &mdash; Multiplication, sharpened</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ HOME ============ -->
+  <section id="screen-home" class="screen active">
+    <header class="top-bar">
+      <span class="brand">Factor Blitz</span>
+      <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+      </button>
+    </header>
+
+    <div class="hero">
+      <h1 class="hero-title">Choose your mode</h1>
+      <p class="hero-sub">Quick multiplication drills, or standardized runs for the leaderboard.</p>
+    </div>
+
+    <div class="mode-select">
+      <button class="mode-card mode-card--practice" data-mode="practice">
+        <span class="mode-card-label">Practice</span>
+        <span class="mode-card-desc">Pick your own ranges and go at your pace. Built for repetition, not pressure.</span>
+        <span class="mode-card-cta">Start practicing</span>
+      </button>
+      <button class="mode-card mode-card--ranked" data-mode="ranked">
+        <span class="mode-card-label">Ranked</span>
+        <span class="mode-card-desc">Fixed configurations, standardized runs. Land a Top 10 spot on the global board.</span>
+        <span class="mode-card-cta">Enter ranked</span>
+      </button>
+    </div>
+
+    <section class="leaderboard-preview" id="leaderboard-section">
+      <h2>Global leaderboards</h2>
+      <div class="lb-controls">
+        <div class="lb-tab-group" id="lb-config-tabs"></div>
+        <div class="lb-tab-group" id="lb-type-tabs"></div>
+      </div>
+      <div id="lb-table-wrap"><p class="lb-empty">Loading leaderboard&hellip;</p></div>
+    </section>
+  </section>
+
+  <!-- ============ PRACTICE CONFIG ============ -->
+  <section id="screen-practice-config" class="screen">
+    <header class="config-header config-header--practice">
+      <button class="back-btn" data-back="home">&larr; Home</button>
+      <span class="config-title">Practice</span>
+    </header>
+
+    <div class="config-body">
+      <div class="config-step">
+        <h3>1. Choose your range</h3>
+        <div class="segmented" id="practice-range-type">
+          <button class="segmented-opt active" data-range-type="single">Single table</button>
+          <button class="segmented-opt" data-range-type="advanced">Advanced</button>
+        </div>
+
+        <div id="single-range-fields" class="range-fields">
+          <label class="field">
+            <span>First number</span>
+            <select id="single-first-factor"></select>
+          </label>
+          <label class="field">
+            <span>Second number: from</span>
+            <input type="number" id="single-min" value="0" min="0" />
+          </label>
+          <label class="field">
+            <span>to</span>
+            <input type="number" id="single-max" value="12" min="0" />
+          </label>
+        </div>
+
+        <div id="advanced-range-fields" class="range-fields hidden">
+          <label class="field">
+            <span>First number: from</span>
+            <input type="number" id="adv-minA" value="1" min="0" />
+          </label>
+          <label class="field">
+            <span>to</span>
+            <input type="number" id="adv-maxA" value="12" min="0" />
+          </label>
+          <label class="field">
+            <span>Second number: from</span>
+            <input type="number" id="adv-minB" value="1" min="0" />
+          </label>
+          <label class="field">
+            <span>to</span>
+            <input type="number" id="adv-maxB" value="12" min="0" />
+          </label>
+        </div>
+        <p class="field-error hidden" id="practice-range-error"></p>
+      </div>
+
+      <div class="config-step">
+        <h3>2. Choose a game type</h3>
+        <div class="game-type-cards" id="practice-game-types">
+          <button class="game-type-card" data-game-type="accuracy">
+            <span class="gt-title">Accuracy</span>
+            <span class="gt-desc">Answer a set number of questions. No timer.</span>
+            <span class="gt-options" id="opts-accuracy"></span>
+          </button>
+          <button class="game-type-card" data-game-type="race">
+            <span class="gt-title">Race</span>
+            <span class="gt-desc">Reach a target number correct, as fast as you can.</span>
+            <span class="gt-options" id="opts-race"></span>
+          </button>
+          <button class="game-type-card" data-game-type="time_trial">
+            <span class="gt-title">Time Trial</span>
+            <span class="gt-desc">30 seconds. +1 correct, &minus;1 incorrect.</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="primary-btn primary-btn--practice" id="practice-start-btn" disabled>Start</button>
+    </div>
+  </section>
+
+  <!-- ============ RANKED SELECT ============ -->
+  <section id="screen-ranked-select" class="screen">
+    <header class="config-header config-header--ranked">
+      <button class="back-btn" data-back="home">&larr; Home</button>
+      <span class="config-title">Ranked</span>
+    </header>
+
+    <div class="config-body">
+      <div class="config-step">
+        <h3>1. Choose a configuration</h3>
+        <div class="ranked-config-cards" id="ranked-config-cards"></div>
+      </div>
+
+      <div class="config-step">
+        <h3>2. Choose a game type</h3>
+        <div class="game-type-cards" id="ranked-game-types">
+          <button class="game-type-card" data-game-type="accuracy">
+            <span class="gt-title">Accuracy</span>
+            <span class="gt-desc">50 questions. Highest percentage wins.</span>
+          </button>
+          <button class="game-type-card" data-game-type="race">
+            <span class="gt-title">Race</span>
+            <span class="gt-desc">50 correct answers. Fastest time wins.</span>
+          </button>
+          <button class="game-type-card" data-game-type="time_trial">
+            <span class="gt-title">Time Trial</span>
+            <span class="gt-desc">30 seconds. Highest score wins.</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="primary-btn primary-btn--ranked" id="ranked-start-btn" disabled>Start</button>
+    </div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="screen-game" class="screen">
+    <div class="game-wrap">
+      <div class="game-indicator" id="game-indicator">&nbsp;</div>
+      <div class="game-problem" id="game-problem">&nbsp;</div>
+      <input type="text" inputmode="numeric" autocomplete="off" class="game-answer" id="game-answer" placeholder="?" />
+      <div class="game-feedback" id="game-feedback"></div>
+      <button class="quit-btn" id="quit-btn">Quit</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="screen-results" class="screen">
+    <div class="results-wrap">
+      <span class="results-eyebrow" id="results-mode-label">Practice</span>
+      <h2 class="results-heading" id="results-heading">Results</h2>
+      <div class="results-stats" id="results-stats"></div>
+
+      <div class="qualify-box hidden" id="qualify-box">
+        <p>New Top 10 score! Enter your initials:</p>
+        <div class="initials-inputs">
+          <input maxlength="1" class="initial-letter" data-idx="0" />
+          <input maxlength="1" class="initial-letter" data-idx="1" />
+          <input maxlength="1" class="initial-letter" data-idx="2" />
+          <input maxlength="1" class="initial-letter" data-idx="3" />
+        </div>
+        <button class="primary-btn" id="submit-initials-btn">Submit</button>
+      </div>
+
+      <div class="results-actions">
+        <button class="primary-btn" id="play-again-btn">Play again</button>
+        <button class="secondary-btn" id="results-home-btn">Return home</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
