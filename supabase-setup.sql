@@ -22,15 +22,29 @@ create index if not exists idx_leaderboard_lookup
 -- rows (so scores can't be tampered with after submission).
 alter table leaderboard_scores enable row level security;
 
+-- "drop ... if exists" first makes this script safe to paste into a fresh
+-- Supabase project, or re-run on this one, without erroring on policies
+-- that already exist from a previous run.
+drop policy if exists "Public read access" on leaderboard_scores;
 create policy "Public read access"
   on leaderboard_scores for select
   to anon
   using (true);
 
+drop policy if exists "Public insert access" on leaderboard_scores;
 create policy "Public insert access"
   on leaderboard_scores for insert
   to anon
   with check (true);
+
+-- Explicit permission grants for the table (rather than relying on the
+-- project-level "automatically expose new tables" default, which Supabase
+-- itself recommends leaving off). RLS policies above control *which rows*
+-- a role can see/insert; these grants are the separate, lower-level
+-- permission that lets the anon role touch this table at all.
+grant usage on schema public to anon, authenticated;
+grant select, insert on leaderboard_scores to anon, authenticated;
+grant usage, select on all sequences in schema public to anon, authenticated;
 
 
 -- =============================================================================

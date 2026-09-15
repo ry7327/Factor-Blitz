@@ -698,8 +698,8 @@ html[data-theme="dark"] .primary-btn { background: var(--fg); color: var(--bg); 
   position: absolute;
   top: 84px;
   right: 40px;
-  width: 58px;
-  height: 58px;
+  width: 52px;
+  height: 52px;
   padding: 0;
   z-index: 5;
   animation: bee-fly 26s ease-in-out infinite;
@@ -718,6 +718,38 @@ html[data-theme="dark"] .primary-btn { background: var(--fg); color: var(--bg); 
   display: block;
   transform: scaleX(-1); /* face left, toward the center of the screen */
 }
+
+.bee-trail {
+  position: absolute;
+  top: 84px;
+  right: 40px;
+  width: 52px;
+  height: 52px;
+  z-index: 4;
+  pointer-events: none;
+}
+.bee-trail span {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  width: 11px;
+  height: 3px;
+  border-radius: 2px;
+  background: #2A2A2E;
+  animation: bee-fly 26s ease-in-out infinite;
+  animation-fill-mode: both;
+}
+/* Each dash shares the bee's own flight path, just started slightly later
+   in time — so it always sits exactly where the bee itself recently was,
+   retracing the real path rather than a fixed drawn shape. Increasing
+   delay + decreasing opacity together read as a trail fading with distance. */
+.bee-trail span:nth-child(1) { animation-delay: 0.32s; opacity: 0.55; }
+.bee-trail span:nth-child(2) { animation-delay: 0.64s; opacity: 0.46; }
+.bee-trail span:nth-child(3) { animation-delay: 0.96s; opacity: 0.37; }
+.bee-trail span:nth-child(4) { animation-delay: 1.28s; opacity: 0.28; }
+.bee-trail span:nth-child(5) { animation-delay: 1.60s; opacity: 0.20; }
+.bee-trail span:nth-child(6) { animation-delay: 1.92s; opacity: 0.12; }
+.bee-trail span:nth-child(7) { animation-delay: 2.24s; opacity: 0.06; }
 
 @keyframes bee-fly {
   0%   { transform: translate(0, 0) rotate(0deg); }
@@ -751,4 +783,5 @@ html[data-theme="dark"] .bee-message { background: var(--fg); color: var(--bg); 
 
 @media (prefers-reduced-motion: reduce) {
   .secret-bee { animation: none; }
+  .bee-trail { display: none; }
 }
