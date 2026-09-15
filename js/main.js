@@ -86,14 +86,104 @@ function wireHome() {
   });
 
   let beeMessageTimeout = null;
+  let beeClickCount = 0;
+  let swarmActive = false;
+
   $("#secret-bee").addEventListener("click", () => {
-    const msg = $("#bee-message");
-    msg.classList.add("showing");
-    clearTimeout(beeMessageTimeout);
-    beeMessageTimeout = setTimeout(() => {
-      msg.classList.remove("showing");
-    }, 2200);
+    if (swarmActive) return;
+    beeClickCount += 1;
+    if (beeClickCount >= 3) {
+      beeClickCount = 0;
+
+      const msg = $("#bee-message");
+      msg.classList.add("showing");
+      clearTimeout(beeMessageTimeout);
+      beeMessageTimeout = setTimeout(() => {
+        msg.classList.remove("showing");
+      }, 2200);
+
+      spawnBeeSwarm();
+    }
   });
+
+  function spawnBeeSwarm() {
+    const layer = $("#bee-swarm");
+    const template = $("#secret-bee svg").outerHTML;
+    const COUNT = 30;
+    const MIN_DURATION = 4.5;
+    const MAX_DURATION = 8.5;
+    const MAX_STAGGER = 1.4;
+    const DASHES_PER_BEE = 4;
+    const DASH_STAGGER = 0.09; // seconds behind its own bee, per dash
+
+    swarmActive = true;
+    layer.innerHTML = "";
+
+    let longestFinish = 0;
+
+    for (let i = 0; i < COUNT; i++) {
+      const size = 18 + Math.random() * 22; // 18-40px, for a sense of depth
+      const duration = MIN_DURATION + Math.random() * (MAX_DURATION - MIN_DURATION);
+      const delay = Math.random() * MAX_STAGGER;
+      const tx = (Math.random() * 2 - 1) * 520;
+      const ty = -150 + Math.random() * 800;
+      const tx2 = tx + (Math.random() * 2 - 1) * 160;
+      const ty2 = ty + 60 + Math.random() * 140;
+      const rot = (Math.random() * 2 - 1) * 30;
+      const rot2 = rot + (Math.random() * 2 - 1) * 20;
+      // Spread starting points across the whole home screen, not just
+      // from the clicked bee's corner.
+      const startTopPct = Math.random() * 88;
+      const startLeftPct = Math.random() * 92;
+
+      const bee = document.createElement("div");
+      bee.className = "swarm-bee";
+      bee.innerHTML = template;
+      bee.style.width = `${size}px`;
+      bee.style.height = `${size}px`;
+      bee.style.top = `${startTopPct}%`;
+      bee.style.left = `${startLeftPct}%`;
+      bee.style.setProperty("--tx", `${tx}px`);
+      bee.style.setProperty("--ty", `${ty}px`);
+      bee.style.setProperty("--tx2", `${tx2}px`);
+      bee.style.setProperty("--ty2", `${ty2}px`);
+      bee.style.setProperty("--rot", `${rot}deg`);
+      bee.style.setProperty("--rot2", `${rot2}deg`);
+      bee.style.animationDuration = `${duration}s`;
+      bee.style.animationDelay = `${delay}s`;
+      layer.appendChild(bee);
+
+      // Trailing dashes: identical flight path (same --tx/--ty/--rot vars),
+      // started slightly later than this specific bee, and progressively
+      // fainter — so each one traces exactly where its own bee just was.
+      for (let d = 1; d <= DASHES_PER_BEE; d++) {
+        const dash = document.createElement("div");
+        dash.className = "swarm-bee-dash";
+        const dashSize = Math.max(3, size * 0.22);
+        dash.style.width = `${dashSize * 1.8}px`;
+        dash.style.height = `${dashSize * 0.5}px`;
+        dash.style.top = `${startTopPct}%`;
+        dash.style.left = `${startLeftPct}%`;
+        dash.style.setProperty("--tx", `${tx}px`);
+        dash.style.setProperty("--ty", `${ty}px`);
+        dash.style.setProperty("--tx2", `${tx2}px`);
+        dash.style.setProperty("--ty2", `${ty2}px`);
+        dash.style.setProperty("--rot", `${rot}deg`);
+        dash.style.setProperty("--rot2", `${rot2}deg`);
+        dash.style.setProperty("--peak-opacity", `${0.5 - d * 0.09}`);
+        dash.style.animationDuration = `${duration}s`;
+        dash.style.animationDelay = `${delay + d * DASH_STAGGER}s`;
+        layer.appendChild(dash);
+      }
+
+      longestFinish = Math.max(longestFinish, delay + duration);
+    }
+
+    setTimeout(() => {
+      layer.innerHTML = "";
+      swarmActive = false;
+    }, (longestFinish + 0.3) * 1000);
+  }
 }
 
 function renderLeaderboardTabs() {

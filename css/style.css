@@ -702,12 +702,11 @@ html[data-theme="dark"] .primary-btn { background: var(--fg); color: var(--bg); 
   height: 52px;
   padding: 0;
   z-index: 5;
-  animation: bee-fly 26s ease-in-out infinite;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
   transition: transform 120ms ease;
 }
 .secret-bee:hover {
-  animation-play-state: paused;
+  transform: scale(1.08);
 }
 .secret-bee:active {
   transform: scale(0.9);
@@ -716,49 +715,46 @@ html[data-theme="dark"] .primary-btn { background: var(--fg); color: var(--bg); 
   width: 100%;
   height: 100%;
   display: block;
-  transform: scaleX(-1); /* face left, toward the center of the screen */
 }
 
-.bee-trail {
+/* ---- Swarm event (triggered on the 3rd click) ---- */
+.bee-swarm-layer {
   position: absolute;
-  top: 84px;
-  right: 40px;
-  width: 52px;
-  height: 52px;
-  z-index: 4;
+  inset: 0;
+  overflow: hidden;
+  z-index: 6;
   pointer-events: none;
 }
-.bee-trail span {
+.swarm-bee {
   position: absolute;
-  top: 22px;
-  right: 22px;
-  width: 11px;
-  height: 3px;
-  border-radius: 2px;
-  background: #2A2A2E;
-  animation: bee-fly 26s ease-in-out infinite;
+  top: 40%;
+  left: 40%;
+  animation-name: swarm-fly;
+  animation-timing-function: ease-in-out;
   animation-fill-mode: both;
 }
-/* Each dash shares the bee's own flight path, just started slightly later
-   in time — so it always sits exactly where the bee itself recently was,
-   retracing the real path rather than a fixed drawn shape. Increasing
-   delay + decreasing opacity together read as a trail fading with distance. */
-.bee-trail span:nth-child(1) { animation-delay: 0.32s; opacity: 0.55; }
-.bee-trail span:nth-child(2) { animation-delay: 0.64s; opacity: 0.46; }
-.bee-trail span:nth-child(3) { animation-delay: 0.96s; opacity: 0.37; }
-.bee-trail span:nth-child(4) { animation-delay: 1.28s; opacity: 0.28; }
-.bee-trail span:nth-child(5) { animation-delay: 1.60s; opacity: 0.20; }
-.bee-trail span:nth-child(6) { animation-delay: 1.92s; opacity: 0.12; }
-.bee-trail span:nth-child(7) { animation-delay: 2.24s; opacity: 0.06; }
+.swarm-bee svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.swarm-bee-dash {
+  position: absolute;
+  top: 40%;
+  left: 40%;
+  background: #000000;
+  border-radius: 2px;
+  animation-name: swarm-fly;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
 
-@keyframes bee-fly {
-  0%   { transform: translate(0, 0) rotate(0deg); }
-  20%  { transform: translate(-160px, 60px) rotate(-8deg); }
-  40%  { transform: translate(-260px, 220px) rotate(6deg); }
-  55%  { transform: translate(-80px, 320px) rotate(-4deg); }
-  70%  { transform: translate(40px, 180px) rotate(8deg); }
-  85%  { transform: translate(-40px, 60px) rotate(-6deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+@keyframes swarm-fly {
+  0%   { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 0; }
+  12%  { opacity: var(--peak-opacity, 1); }
+  50%  { transform: translate(var(--tx), var(--ty)) scale(1) rotate(var(--rot)); }
+  88%  { opacity: var(--peak-opacity, 1); }
+  100% { transform: translate(var(--tx2), var(--ty2)) scale(0.6) rotate(var(--rot2)); opacity: 0; }
 }
 
 .bee-message {
@@ -782,6 +778,5 @@ html[data-theme="dark"] .bee-message { background: var(--fg); color: var(--bg); 
 .bee-message.showing { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
-  .secret-bee { animation: none; }
-  .bee-trail { display: none; }
+  .bee-swarm-layer { display: none; }
 }
